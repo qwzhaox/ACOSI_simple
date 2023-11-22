@@ -96,8 +96,9 @@ def naive_train_T5(args):
                 bt_scores = calculate(list(oup), pred_sums)
                 rouge_scorer += bt_scores
                 c_rouge = np.mean(rouge_scorer)
-                print('The first label is %s' % oup)
-                print('the first pred is %s' % pred_sums)
+                print('The first label is %s' % str(oup))
+                print('the first pred is %s' % str(pred_sums))
+                print('C_rouge', c_rouge)
                 if c_rouge > rouge_iter:
                     os.makedirs(
                     args.model_path + '/' + str(args.epochs), exist_ok=True
@@ -114,11 +115,10 @@ def naive_train_T5(args):
                     )
             if checker == args.epochs:
                 break
-
+    # add code for model testing here
 
 
 def predict_rest(model_path, args):
-
     tokenizer.add_tokens(['<labels>', '<A>', '<C>', '<O>', '<S>', '<I>'])
     model = Model.from_pretrained(args.t5_version, return_dict=True)
     model.resize_token_embeddings(len(tokenizer))
@@ -149,14 +149,12 @@ def predict_rest(model_path, args):
             print(tokenizer.decode(pred[0], skip_special_tokens=True))
 
 
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-mode', default='predict', type=str)
+    parser.add_argument('-mode', default='train', type=str)
     parser.add_argument('-t5_version', default="google/t5-v1_1-base", type=str)
     parser.add_argument('-epochs', default=30000, type=int)
-    parser.add_argument('-learning_rate', default=2e-5, type=float)
+    parser.add_argument('-learning_rate', default=1e-4, type=float)
     parser.add_argument('-batch_size', default=8, type=int)
     parser.add_argument('-train_data', default='/home/jade/ACOSI/data/shoes_966.txt', type=str)
     parser.add_argument('-test_data', default='/home/jade/ACOSI/data/shoes_test.txt', type=str)
@@ -167,7 +165,6 @@ if __name__ == '__main__':
     parser.add_argument('-check_every', default=200, type=int)
     parser.add_argument('-rest_data', default='/home/jade/ACOSI/data/ryan.txt', type=str)
 
-
     args = parser.parse_args()
 
     if args.mode == 'train':
@@ -177,9 +174,5 @@ if __name__ == '__main__':
             '/home/jade/ACOSI/code/model/Naive/30000/Best_step29000Rouge0.430',
             args
         )
-
-
-
-
 
     print('This is a placeholder')
