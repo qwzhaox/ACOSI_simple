@@ -200,8 +200,8 @@ if __name__ == '__main__':
     if args.mode == 'train':
         naive_train_T5(args)
     elif args.mode == 'test':
-        naive_train_T5(args)
-        test(args)
+        # naive_train_T5(args)
+        test('/home/janeluo/nlp/t5_model/t5/30000/Best_step15600Rouge0.397', args)
     elif args.mode == 'predict':
         predict_rest(
             '/home/jade/ACOSI/code/model/Naive/30000/Best_step29000Rouge0.430',

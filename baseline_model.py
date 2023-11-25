@@ -101,7 +101,7 @@ def naive_train_T5(args):
                 print('C_rouge', c_rouge)
                 if c_rouge > rouge_iter:
                     os.makedirs(
-                    args.model_path + '/' + str(args.epochs), exist_ok=True
+                    args.model_path + '/' + str(args.epochs) + 'handata', exist_ok=True
                     )
                     print('saving a model')
                     rouge_iter = c_rouge
@@ -115,7 +115,6 @@ def naive_train_T5(args):
                     )
             if checker == args.epochs:
                 break
-    # add code for model testing here
 
 
 def predict_rest(model_path, args):
