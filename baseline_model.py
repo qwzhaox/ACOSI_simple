@@ -115,7 +115,36 @@ def naive_train_T5(args):
                     )
             if checker == args.epochs:
                 break
-    # add code for model testing here
+
+
+def test(model_path, args):
+    tokenizer.add_tokens(['<labels>', '<A>', '<C>', '<O>', '<S>', '<I>'])
+    model = Model.from_pretrained(args.t5_version, return_dict=True)
+    model.resize_token_embeddings(len(tokenizer))
+    # model.load_state_dict(torch.load(model_path))
+    # best_point = torch.load(model_path)
+    model.load_state_dict(torch.load(model_path)['model_state_dict'])
+    model.eval()
+    model.cuda()
+    
+    print('current mode  is %s' % args.mode)
+    test_data  = args.test_data
+    with open (test_data, 'r') as f:
+        for line in f:
+            inp_encoding = tokenizer(line,
+                                    return_tensors = 'pt',
+                                    )
+            inp_ids, attention_mask = inp_encoding.input_ids.cuda(), inp_encoding.attention_mask.cuda()
+            
+            pred = model.generate(
+                input_ids = inp_ids,
+                attention_mask = attention_mask,
+                max_length = 64,
+                num_beams = 3,
+                no_repeat_ngram_size=5,
+                early_stopping = True
+            )
+            print(tokenizer.decode(pred[0], skip_special_tokens=True))
 
 
 def predict_rest(model_path, args):
@@ -151,7 +180,7 @@ def predict_rest(model_path, args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-mode', default='train', type=str)
+    parser.add_argument('-mode', default='test', type=str)
     parser.add_argument('-t5_version', default="google/t5-v1_1-base", type=str)
     parser.add_argument('-epochs', default=30000, type=int)
     parser.add_argument('-learning_rate', default=1e-4, type=float)
@@ -169,6 +198,9 @@ if __name__ == '__main__':
 
     if args.mode == 'train':
         naive_train_T5(args)
+    elif args.mode == 'test':
+        # naive_train_T5(args)
+        test('/home/janeluo/nlp/t5_model/t5/30000/Best-Han-22600Rouge0.389', args)
     elif args.mode == 'predict':
         predict_rest(
             '/home/jade/ACOSI/code/model/Naive/30000/Best_step29000Rouge0.430',
