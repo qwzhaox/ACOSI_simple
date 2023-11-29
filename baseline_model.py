@@ -14,6 +14,7 @@ from data_reader import T5_reader
 import os
 import numpy as np
 from tqdm import tqdm
+import pickle
 
 tokenizer = T5Tokenizer.from_pretrained("t5-base")
 
@@ -30,7 +31,7 @@ def naive_train_T5(args):
     tokenizer.add_tokens(['<labels>', '<A>', '<C>', '<O>', '<S>', '<I>'])
     dataset = T5_reader(args.train_data)
     dataloader = DataLoader(dataset, batch_size = args.batch_size)
-    t_dataset = T5_reader(args.test_data)
+    t_dataset = T5_reader(args.val_data)
     t_dataloader = DataLoader(t_dataset, batch_size = args.batch_size)
     model = T5ForConditionalGeneration.from_pretrained(args.t5_version)
     model.resize_token_embeddings(len(tokenizer))
@@ -118,17 +119,16 @@ def naive_train_T5(args):
 
 
 def test(model_path, args):
-    tokenizer.add_tokens(['<labels>', '<A>', '<C>', '<O>', '<S>', '<I>'])
+    tokenizer.add_tokens(['[SSEP]', '[A]', '[C]', '[O]', '[S]', '[I]'])
     model = Model.from_pretrained(args.t5_version, return_dict=True)
     model.resize_token_embeddings(len(tokenizer))
-    # model.load_state_dict(torch.load(model_path))
-    # best_point = torch.load(model_path)
     model.load_state_dict(torch.load(model_path)['model_state_dict'])
     model.eval()
     model.cuda()
     
     print('current mode  is %s' % args.mode)
     test_data  = args.test_data
+    predictions = []
     with open (test_data, 'r') as f:
         for line in f:
             inp_encoding = tokenizer(line,
@@ -144,7 +144,9 @@ def test(model_path, args):
                 no_repeat_ngram_size=5,
                 early_stopping = True
             )
-            print(tokenizer.decode(pred[0], skip_special_tokens=True))
+            predictions.append(tokenizer.decode(pred[0], skip_special_tokens=True))
+    with open(args.pkl_file, "wb") as handle:
+        pickle.dump(predictions, handle)
 
 
 def predict_rest(model_path, args):
@@ -186,20 +188,21 @@ if __name__ == '__main__':
     parser.add_argument('-learning_rate', default=1e-4, type=float)
     parser.add_argument('-batch_size', default=8, type=int)
     parser.add_argument('-train_data', default='/home/jade/ACOSI/data/shoes_966.txt', type=str)
-    parser.add_argument('-test_data', default='/home/jade/ACOSI/data/shoes_test.txt', type=str)
+    parser.add_argument('-val_data', default='/home/jade/ACOSI/data/shoes_test.txt', type=str)
+    parser.add_argument('-test_data', type=str)
     parser.add_argument('-model_path', default='Naive', type=str)
     parser.add_argument('-shuffle', default=True, type=bool)
     parser.add_argument('-max_input_length', default=128, type=int)
     parser.add_argument('-max_target_length', default=64, type=int)
     parser.add_argument('-check_every', default=200, type=int)
     parser.add_argument('-rest_data', default='/home/jade/ACOSI/data/ryan.txt', type=str)
+    parser.add_argument('-pkl_file', default='/home/janeluo/nlp/t5_model/t5/hanpredictions.pickle', type=str)
 
     args = parser.parse_args()
 
     if args.mode == 'train':
         naive_train_T5(args)
     elif args.mode == 'test':
-        # naive_train_T5(args)
         test('/home/janeluo/nlp/t5_model/t5/30000/Best-Han-22600Rouge0.389', args)
     elif args.mode == 'predict':
         predict_rest(
